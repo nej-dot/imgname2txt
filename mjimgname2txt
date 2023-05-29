@@ -1,0 +1,66 @@
+import os
+import shutil
+from tkinter import filedialog, Tk, Button, StringVar, Label
+from tkinter import ttk
+
+def process_filenames(directory):
+    files = [f for f in os.listdir(directory) if f.endswith(".jpg") or f.endswith(".png")]
+    total_files = len(files)
+    progress['maximum'] = total_files
+    generated_count = 0
+    
+    for filename in files:
+        base, ext = os.path.splitext(filename)
+
+        # Remove prefix and UUID
+        name_parts = base.split("_")
+        if len(name_parts) > 2:  # there is a prefix and suffix
+            cleaned_name = " ".join(name_parts[1:-1])
+
+            # Write to text file
+            with open(f"{directory}/{base}.txt", "w") as file:
+                file.write(cleaned_name)
+            
+            generated_count += 1
+            progress['value'] = generated_count
+            count_label['text'] = f"Generated text files: {generated_count}/{total_files}"
+            root.update()
+
+def move_txt_files(directory):
+    txt_directory = os.path.join(directory, "txt_files")
+    os.makedirs(txt_directory, exist_ok=True)
+
+    files = [f for f in os.listdir(directory) if f.endswith(".txt")]
+    for filename in files:
+        shutil.move(os.path.join(directory, filename), txt_directory)
+
+def browse_button():
+    # Allow user to select a directory and store it in a global var
+    global folder_path
+    filename = filedialog.askdirectory()
+    folder_path.set(filename)
+
+root = Tk()
+folder_path = StringVar()
+
+# Browse button to choose directory
+btnBrowse = Button(master=root, text="Browse", command=browse_button)
+btnBrowse.pack()
+
+# Go button to start processing
+btnGo = Button(master=root, text="Go", command=lambda: process_filenames(folder_path.get()))
+btnGo.pack()
+
+# Button to move txt files
+btnMoveTxts = Button(master=root, text="Move TXTs", command=lambda: move_txt_files(folder_path.get()))
+btnMoveTxts.pack()
+
+# Create progress bar
+progress = ttk.Progressbar(root, length=400, mode='determinate')
+progress.pack()
+
+# Create label for file generation count
+count_label = Label(root, text="")
+count_label.pack()
+
+root.mainloop()
